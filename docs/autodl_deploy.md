@@ -24,6 +24,20 @@ conda activate searchr1
 python -c "import torch; import vllm; print('OK')"
 ```
 
+### 不启动 GPU 时安装（仅装环境）
+
+若当前是**无 GPU 实例**或想先在 CPU 上装好依赖（例如先配环境再切到带 GPU 的实例），可加环境变量 `USE_GPU=0`，安装 CPU 版 PyTorch、跳过 flash-attn，其它依赖照常安装，之后到有 GPU 的机器上可直接用该环境训练/推理：
+
+```bash
+# Search-R1 主环境（CPU 版依赖）
+USE_GPU=0 bash autodl/setup_searchr1.sh
+
+# Retriever 环境（使用 faiss-cpu）
+USE_GPU=0 bash autodl/setup_retriever.sh
+```
+
+注意：训练和推理仍需在有 GPU 的实例上运行，CPU 安装仅用于提前把环境装好（如上传到数据盘后，在 GPU 实例中挂载使用）。
+
 如需**本地检索服务**（NQ + E5 + Wikipedia 等），可再开一个终端安装并启动 Retriever 环境：
 
 ```bash

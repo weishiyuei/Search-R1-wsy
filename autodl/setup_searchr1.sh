@@ -12,6 +12,8 @@ export PIP_TRUSTED_HOST="${PIP_TRUSTED_HOST:-pypi.tuna.tsinghua.edu.cn}"
 
 CONDA_ENV_NAME="${CONDA_ENV_NAME:-searchr1}"
 PYTHON_VERSION="${PYTHON_VERSION:-3.9}"
+# 不启动 GPU 时设置 USE_GPU=0，安装 CPU 版依赖（仅装环境，训练/推理仍需 GPU）
+USE_GPU="${USE_GPU:-1}"
 # AutoDL 常见为 cu121，按实例选择
 CUDA_TAG="${CUDA_TAG:-cu121}"
 TORCH_VERSION="${TORCH_VERSION:-2.4.0}"
@@ -21,6 +23,7 @@ echo "=== Search-R1 环境安装 ==="
 echo "项目路径: $PROJECT_ROOT"
 echo "Conda 环境: $CONDA_ENV_NAME"
 echo "Pip 镜像: $PIP_INDEX_URL"
+echo "GPU 模式: $([ "$USE_GPU" = "1" ] && echo '是' || echo '否（仅 CPU）')"
 
 # 创建 conda 环境
 if conda env list | grep -q "^\s*${CONDA_ENV_NAME}\s"; then
@@ -31,11 +34,15 @@ fi
 source "$(conda info --base)/etc/profile.d/conda.sh"
 conda activate "$CONDA_ENV_NAME"
 
-# PyTorch (CUDA 12.1，与 AutoDL 常见镜像一致)
-pip install torch==${TORCH_VERSION} --index-url https://download.pytorch.org/whl/${CUDA_TAG} -q
+# PyTorch（USE_GPU=0 时装 CPU 版，不占 GPU 也能装好环境）
+if [ "$USE_GPU" = "1" ]; then
+  pip install torch==${TORCH_VERSION} --index-url https://download.pytorch.org/whl/${CUDA_TAG} -q
+else
+  pip install torch==${TORCH_VERSION} --index-url https://download.pytorch.org/whl/cpu -q
+fi
 pip install torchvision torchaudio -q
 
-# vllm
+# vllm（CPU 模式下也安装，便于之后切到 GPU 实例直接使用）
 pip install "vllm==${VLLM_VERSION}" -i "$PIP_INDEX_URL" -q
 
 # 项目依赖 (requirements.txt)
@@ -44,13 +51,18 @@ pip install -r requirements.txt -i "$PIP_INDEX_URL" -q
 # 以可编辑方式安装 verl
 pip install -e . -i "$PIP_INDEX_URL" -q
 
-# Flash Attention 2 (编译较慢，失败可暂时跳过)
-pip install flash-attn --no-build-isolation -i "$PIP_INDEX_URL" -q || echo "flash-attn 安装失败，可稍后单独安装"
+# Flash Attention 2（仅 GPU 模式安装；CPU 模式跳过）
+if [ "$USE_GPU" = "1" ]; then
+  pip install flash-attn --no-build-isolation -i "$PIP_INDEX_URL" -q || echo "flash-attn 安装失败，可稍后单独安装"
+else
+  echo "跳过 flash-attn（CPU 模式）"
+fi
 
 # wandb 等
 pip install wandb -i "$PIP_INDEX_URL" -q
 
 echo "=== Search-R1 环境安装完成 ==="
 echo "激活环境: conda activate $CONDA_ENV_NAME"
+[ "$USE_GPU" = "0" ] && echo "当前为 CPU 安装，训练/推理请在有 GPU 的实例上使用此环境。" || true
 echo "训练示例: bash train_ppo.sh"
 echo "推理示例: python infer.py"
