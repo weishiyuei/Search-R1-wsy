@@ -1,0 +1,21 @@
+# 构建 Search-R1 镜像时忽略，减小镜像体积、加快构建
+.git
+.gitignore
+*.md
+!verl/**/*.md
+data
+**/checkpoints
+**/*.ckpt
+**/*.pt
+wandb
+**/__pycache__
+**/*.pyc
+*.egg-info
+.idea
+*.log
+*.tar.gz
+autodl
+docs
+example
+public
+scripts/upload.sh

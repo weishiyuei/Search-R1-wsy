@@ -1,0 +1,35 @@
+# Search-R1 Conda 环境定义 (适用于 AutoDL / 云端)
+# 使用方式: conda env create -f environment.yaml
+name: searchr1
+channels:
+  - pytorch
+  - nvidia
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.9
+  - pip
+  # PyTorch 与 CUDA 建议在 AutoDL 上用脚本安装，以匹配实例 CUDA 版本
+  # - pytorch=2.4.0
+  # - torchvision
+  # - torchaudio
+  # - pytorch-cuda=12.1
+  - pip:
+    - torch==2.4.0
+    - vllm==0.6.3
+    - accelerate
+    - codetiming
+    - datasets
+    - dill
+    - hydra-core
+    - numpy
+    - pandas
+    - pybind11
+    - ray
+    - "tensordict<0.6"
+    - "transformers<4.48"
+    - wandb
+    - IPython
+    - matplotlib
+    # flash-attn 需单独安装: pip install flash-attn --no-build-isolation
+    # 本项目需在仓库根目录执行: pip install -e .
